@@ -13,13 +13,14 @@ logger = logging.getLogger(__name__)
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--files", nargs="+", type=str, required=True,
-                        help="The image files to copy")
-    parser.add_argument("--target_dir", type=str, required=True,
-                        help="")
+    parser.add_argument("--files", nargs="+", type=str, required=True, help="The image files to copy")
+    parser.add_argument("--target_dir", type=str, required=True, help="")
     parser.add_argument("--index_files", action="store_true")
-    parser.add_argument("--convert_images", type=str,
-                        help="Convert the image to a given type (by default use original format). E. g. jpg, png, tif, ...")
+    parser.add_argument(
+        "--convert_images",
+        type=str,
+        help="Convert the image to a given type (by default use original format). E. g. jpg, png, tif, ...",
+    )
     parser.add_argument("--gt_ext", type=str, default=".gt.txt")
     parser.add_argument("--index_ext", type=str, default=".index")
 
@@ -71,5 +72,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-

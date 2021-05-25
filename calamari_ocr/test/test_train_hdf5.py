@@ -23,7 +23,7 @@ def default_trainer_params(with_validation=False, preload=True):
     if with_validation:
         p.gen.val = Hdf5(
             files=[os.path.join(this_dir, "data", "uw3_50lines", "uw3-50lines.h5")],
-            preload=preload
+            preload=preload,
         )
         p.gen.train = train
         p.gen.__post_init__()
@@ -36,10 +36,6 @@ def default_trainer_params(with_validation=False, preload=True):
     p.gen.setup.train.num_processes = 1
     p.epochs = 1
     p.samples_per_epoch = 2
-    p.scenario.data.pre_proc = SequentialProcessorPipelineParams(
-        run_parallel=False,
-        processors=[PrepareSampleProcessorParams()],
-    )
     p.scenario.data.__post_init__()
     p.scenario.__post_init__()
     p.__post_init__()

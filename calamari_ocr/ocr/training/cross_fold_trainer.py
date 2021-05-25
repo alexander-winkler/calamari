@@ -15,7 +15,10 @@ from tfaip.util.tfaipargparse import post_init
 from calamari_ocr.ocr import CrossFold, SavedCalamariModel
 from calamari_ocr.ocr.dataset.datareader.hdf5.reader import Hdf5
 from calamari_ocr.ocr.scenario import CalamariScenario
-from calamari_ocr.ocr.training.params import TrainerParams, CalamariDefaultTrainerPipelineParams
+from calamari_ocr.ocr.training.params import (
+    TrainerParams,
+    CalamariDefaultTrainerPipelineParams,
+)
 from calamari_ocr.utils.multiprocessing import prefix_run_command, run
 
 logger = logging.getLogger(__name__)
@@ -33,13 +36,21 @@ def train_individual_model(run_args):
     train_args_json = run_args["json"]
     fold_logger = logging.getLogger(f"FOLD {run_args['id']}")
     for handler in fold_logger.handlers:
-        handler.terminator = ''
+        handler.terminator = ""
 
-    for out, err in run(prefix_run_command([
-        sys.executable, "-u",
-        run_args["train_script"],
-        train_args_json,
-    ], run_args.get("run", None), {"threads": run_args.get('num_threads', -1)}), verbose=run_args.get("verbose", False)):
+    for out, err in run(
+        prefix_run_command(
+            [
+                sys.executable,
+                "-u",
+                run_args["train_script"],
+                train_args_json,
+            ],
+            run_args.get("run", None),
+            {"threads": run_args.get("num_threads", -1)},
+        ),
+        verbose=run_args.get("verbose", False),
+    ):
         # Print the output of the thread
         if run_args.get("verbose", False):
             if out:
@@ -53,41 +64,85 @@ def train_individual_model(run_args):
 @pai_dataclass
 @dataclass
 class CrossFoldTrainerParams:
-    trainer: TrainerParams = field(default_factory=CalamariScenario.default_trainer_params, metadata=pai_meta(mode='flat',
-                                                                                                              help="The actual trainer params"))
-    n_folds: int = field(default=5, metadata=pai_meta(mode='flat',
-                                                      help="The number of fold, that is the number of models to train"))
-    keep_temporary_files: bool = field(default=False, metadata=pai_meta(mode='flat',
-                                                                        help="By default all temporary files (e.g. intermediate checkpoints) will be erased. Set this "
-                                                                             "flag if you want to keep those files."))
-    best_models_dir: str = field(default='', metadata=pai_meta(mode='flat',
-                                                               required=True,
-                                                               help="path where to store the best models of each fold"))
-    best_model_label: str = field(default="{id}", metadata=pai_meta(mode='flat',
-                                                                    help="The label of the best model in best model dirs. This will be string formatted. "
-                                                                         "The default '{id}' will label the models 0, 1, 2, 3, ..."))
-    temporary_dir: Optional[str] = field(default=None, metadata=pai_meta(mode='flat',
-                                                                         help="A path to a temporary dir, where the intermediate model training data will be stored"
-                                                                              "for each fold. Use --keep_temporary_files flag to keep the files. By default a system"
-                                                                              "temporary dir will be used"))
-    run: Optional[str] = field(default=None, metadata=pai_meta(mode='flat',
-                                                               help="An optional command that will receive the train calls. Useful e.g. when using a resource "
-                                                                    "manager such as slurm."))
-    max_parallel_models: int = field(default=-1, metadata=pai_meta(mode='flat',
-                                                                   help="Number of models to train in parallel. Defaults to all."))
-    weights: List[str] = field(default_factory=list, metadata=pai_meta(mode='flat',
-                                                                       help="Load network weights from the given file. If more than one file is provided the number "
-                                                                            "models must match the number of folds. Each fold is then initialized with the weights "
-                                                                            "of each model, respectively. If a model path is set to 'None', this model will start "
-                                                                            "from scratch"))
-    single_fold: List[int] = field(default_factory=list, metadata=pai_meta(mode='flat',
-                                                                           help="Only train a single (list of single) specific fold(s)."))
-    visible_gpus: Optional[List[int]] = field(default=None, metadata=pai_meta(
-        mode='flat', help='GPUs to use for scheduling the individual trainig.'
-                          'Use e.g. 0, 1, 2 to schedule five trainings on 0, 1, 2, 0, 1 by setting CUDA_VISIBLE_DEVICES. '
-                          'This option should not be used with `--device.gpus`'
-    ))
-
+    trainer: TrainerParams = field(
+        default_factory=CalamariScenario.default_trainer_params,
+        metadata=pai_meta(mode="flat", help="The actual trainer params"),
+    )
+    n_folds: int = field(
+        default=5,
+        metadata=pai_meta(
+            mode="flat",
+            help="The number of fold, that is the number of models to train",
+        ),
+    )
+    keep_temporary_files: bool = field(
+        default=False,
+        metadata=pai_meta(
+            mode="flat",
+            help="By default all temporary files (e.g. intermediate checkpoints) will be erased. Set this "
+            "flag if you want to keep those files.",
+        ),
+    )
+    best_models_dir: str = field(
+        default="",
+        metadata=pai_meta(
+            mode="flat",
+            required=True,
+            help="path where to store the best models of each fold",
+        ),
+    )
+    best_model_label: str = field(
+        default="{id}",
+        metadata=pai_meta(
+            mode="flat",
+            help="The label of the best model in best model dirs. This will be string formatted. "
+            "The default '{id}' will label the models 0, 1, 2, 3, ...",
+        ),
+    )
+    temporary_dir: Optional[str] = field(
+        default=None,
+        metadata=pai_meta(
+            mode="flat",
+            help="A path to a temporary dir, where the intermediate model training data will be stored"
+            "for each fold. Use --keep_temporary_files flag to keep the files. By default a system"
+            "temporary dir will be used",
+        ),
+    )
+    run: Optional[str] = field(
+        default=None,
+        metadata=pai_meta(
+            mode="flat",
+            help="An optional command that will receive the train calls. Useful e.g. when using a resource "
+            "manager such as slurm.",
+        ),
+    )
+    max_parallel_models: int = field(
+        default=-1,
+        metadata=pai_meta(mode="flat", help="Number of models to train in parallel. Defaults to all."),
+    )
+    weights: List[str] = field(
+        default_factory=list,
+        metadata=pai_meta(
+            mode="flat",
+            help="Load network weights from the given file. If more than one file is provided the number "
+            "models must match the number of folds. Each fold is then initialized with the weights "
+            "of each model, respectively. If a model path is set to 'None', this model will start "
+            "from scratch",
+        ),
+    )
+    single_fold: List[int] = field(
+        default_factory=list,
+        metadata=pai_meta(mode="flat", help="Only train a single (list of single) specific fold(s)."),
+    )
+    visible_gpus: Optional[List[int]] = field(
+        default=None,
+        metadata=pai_meta(
+            mode="flat",
+            help="GPUs to use for scheduling the individual trainig."
+            "Use e.g. 0, 1, 2 to schedule five trainings on 0, 1, 2, 0, 1 by setting CUDA_VISIBLE_DEVICES. "
+            "This option should not be used with `--device.gpus`",
+        ),
+    )
 
     def __post_init__(self):
         if self.max_parallel_models <= 0:
@@ -95,9 +150,11 @@ class CrossFoldTrainerParams:
 
         # argument checks
         if len(self.weights) > 1 and len(self.weights) != self.n_folds:
-            raise Exception("Either no, one or n_folds (={}) models are required for pretraining but got {}.".format(
-                self.n_folds, len(self.weights)
-            ))
+            raise Exception(
+                "Either no, one or n_folds (={}) models are required for pretraining but got {}.".format(
+                    self.n_folds, len(self.weights)
+                )
+            )
 
         if len(self.single_fold) > 0:
             if len(set(self.single_fold)) != len(self.single_fold):
@@ -123,7 +180,8 @@ class CrossFoldTrainer:
 
         if not os.path.exists(self.train_script_path):
             raise FileNotFoundError(
-                "Missing train script path. Expected 'train.py' at {}".format(self.train_script_path))
+                "Missing train script path. Expected 'train.py' at {}".format(self.train_script_path)
+            )
 
         if not isinstance(self.params.trainer, TrainerParams):
             raise TypeError("Train args must be type of TrainerParams")
@@ -141,11 +199,12 @@ class CrossFoldTrainer:
 
         # Compute the files in the cross fold (create a CrossFold)
         fold_file = os.path.join(temporary_dir, "folds.json")
-        cross_fold = CrossFold(n_folds=self.params.n_folds,
-                               data_generator_params=self.params.trainer.gen.train,
-                               output_dir=temporary_dir,
-                               progress_bar=self.params.trainer.progress_bar
-                               )
+        cross_fold = CrossFold(
+            n_folds=self.params.n_folds,
+            data_generator_params=self.params.trainer.gen.train,
+            output_dir=temporary_dir,
+            progress_bar=self.params.trainer.progress_bar,
+        )
         cross_fold.write_folds_to_json(fold_file)
 
         # Create the json argument file for each individual training
@@ -156,7 +215,7 @@ class CrossFoldTrainer:
             train_files = cross_fold.train_files(fold)
             test_files = cross_fold.test_files(fold)
             path = os.path.join(temporary_dir, "fold_{}.json".format(fold))
-            with open(path, 'w') as f:
+            with open(path, "w") as f:
                 trainer_params = deepcopy(self.params.trainer)
                 trainer_params.gen = CalamariDefaultTrainerPipelineParams(
                     train=trainer_params.gen.train,
@@ -165,12 +224,12 @@ class CrossFoldTrainer:
                 )
                 if cross_fold.is_h5_dataset:
                     tp = trainer_params.gen.train.to_dict()
-                    del tp['__cls__']
+                    del tp["__cls__"]
                     tp["files"] = train_files
                     trainer_params.gen.train = Hdf5.from_dict(tp)
                     vp = trainer_params.gen.val.to_dict()
-                    del vp['__cls__']
-                    vp['files'] = test_files
+                    del vp["__cls__"]
+                    vp["files"] = test_files
                     trainer_params.gen.val = Hdf5.from_dict(vp)
                 else:
                     trainer_params.gen.train.images = train_files
@@ -181,7 +240,7 @@ class CrossFoldTrainer:
                 trainer_params.progress_bar_mode = 2
                 trainer_params.output_dir = os.path.join(temporary_dir, "fold_{}".format(fold))
                 trainer_params.early_stopping.best_model_output_dir = self.params.best_models_dir
-                trainer_params.early_stopping.best_model_name = ''
+                trainer_params.early_stopping.best_model_name = ""
                 best_model_prefix = self.params.best_model_label.format(id=fold)
                 trainer_params.best_model_prefix = best_model_prefix
 
@@ -199,7 +258,10 @@ class CrossFoldTrainer:
 
                 # start from scratch via None
                 if trainer_params.warmstart.model:
-                    if len(trainer_params.warmstart.model.strip()) == 0 or trainer_params.warmstart.model.upper() == "NONE":
+                    if (
+                        len(trainer_params.warmstart.model.strip()) == 0
+                        or trainer_params.warmstart.model.upper() == "NONE"
+                    ):
                         trainer_params.warmstart.model = None
                     else:
                         # access model once to upgrade the model if necessary
@@ -214,8 +276,16 @@ class CrossFoldTrainer:
                     indent=4,
                 )
 
-            run_args.append({"json": path, "args": trainer_params, "id": fold, 'train_script': self.train_script_path,
-                             'run': self.params.run, 'verbose': True})
+            run_args.append(
+                {
+                    "json": path,
+                    "args": trainer_params,
+                    "id": fold,
+                    "train_script": self.train_script_path,
+                    "run": self.params.run,
+                    "verbose": True,
+                }
+            )
 
         # Launch the individual processes for each training
         with multiprocessing.pool.ThreadPool(processes=self.params.max_parallel_models) as pool:
@@ -224,4 +294,5 @@ class CrossFoldTrainer:
 
         if not self.params.keep_temporary_files:
             import shutil
+
             shutil.rmtree(temporary_dir)

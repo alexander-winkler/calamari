@@ -23,7 +23,7 @@ class SequenceVoter(Voter):
             SequenceVoter.select_voters(voters)
 
             if self.n_best > 0:
-                actual_voters = voters[:self.n_best]
+                actual_voters = voters[: self.n_best]
             else:
                 actual_voters = voters
 
@@ -44,14 +44,14 @@ class SequenceVoter(Voter):
         def place_vote(c, num_candidates, num_votes=1):
             index = 0
             if c is not None:
-                while index < num_candidates and (candidates[index]['char'] is None or candidates[index]["char"] != c):
+                while index < num_candidates and (candidates[index]["char"] is None or candidates[index]["char"] != c):
                     index += 1
             else:
-                while index < num_candidates and (candidates[index]['char'] is not None):
+                while index < num_candidates and (candidates[index]["char"] is not None):
                     index += 1
 
             if index < num_candidates:
-                candidates[index]['num_votes'] += num_votes
+                candidates[index]["num_votes"] += num_votes
                 return num_candidates
             else:
                 candidates[i]["char"] = c
@@ -63,16 +63,20 @@ class SequenceVoter(Voter):
                 return True, "", 0
 
             leader = 0
-            total_votes = candidates[0]['num_votes']
+            total_votes = candidates[0]["num_votes"]
             for i in range(1, num_candidates):
-                total_votes += candidates[i]['num_votes']
-                if candidates[i]['num_votes'] > candidates[leader]['num_votes']:
+                total_votes += candidates[i]["num_votes"]
+                if candidates[i]["num_votes"] > candidates[leader]["num_votes"]:
                     leader = i
 
             if candidates[leader]["char"] is None:
                 return False, "", 0
 
-            return True, candidates[leader]["char"], candidates[leader]['num_votes'] / total_votes
+            return (
+                True,
+                candidates[leader]["char"],
+                candidates[leader]["num_votes"] / total_votes,
+            )
 
         for sync in synclist:
             r = True
@@ -131,7 +135,7 @@ class SequenceVoter(Voter):
     def count_sequences(sequences, index, voters):
         voter = voters[index]
         for start in range(len(voter.text)):
-            SequenceVoter.add_sequence(sequences, voter.text[start:start + 2], False, index, len(voters))
+            SequenceVoter.add_sequence(sequences, voter.text[start : start + 2], False, index, len(voters))
 
     @staticmethod
     def select_voters(voters):
@@ -156,4 +160,3 @@ class SequenceVoter(Voter):
     @staticmethod
     def text_to_voters(texts):
         return [SequenceVoter.Voter(SequenceVoter.clean_text(t)) for t in texts]
-

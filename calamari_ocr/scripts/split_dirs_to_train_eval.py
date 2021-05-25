@@ -19,8 +19,12 @@ def main():
     parser.add_argument("--output_dir", type=str, required=True)
     parser.add_argument("--train_sub_out", type=str, default="train")
     parser.add_argument("--eval_sub_out", type=str, default="eval")
-    parser.add_argument("--train_amount", type=float, required=True,
-                        help="If >= 1 this value is interpreted as absolute value, else as relative value")
+    parser.add_argument(
+        "--train_amount",
+        type=float,
+        required=True,
+        help="If >= 1 this value is interpreted as absolute value, else as relative value",
+    )
     parser.add_argument("--seed", type=int, default=-1)
 
     args = parser.parse_args()
@@ -50,7 +54,11 @@ def main():
 
     def make_lns(dirs_, out_dir):
         for d_ in dirs_:
-            os.symlink(os.path.join(args.base_dir, d_), os.path.join(out_dir, d_), target_is_directory=True)
+            os.symlink(
+                os.path.join(args.base_dir, d_),
+                os.path.join(out_dir, d_),
+                target_is_directory=True,
+            )
 
     for td, od in zip([train_dirs_, eval_dirs_], [train_dir, eval_dir]):
         logger.info("Processing '{}' to '{}'".format(td, od))
@@ -59,4 +67,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

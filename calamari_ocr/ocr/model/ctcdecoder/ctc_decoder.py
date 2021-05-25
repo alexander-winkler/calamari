@@ -7,13 +7,17 @@ from dataclasses_json import dataclass_json
 from paiargparse import pai_dataclass
 from tfaip.util.enum import StrEnum
 
-from calamari_ocr.ocr.predict.params import Prediction, PredictionPosition, PredictionCharacter
+from calamari_ocr.ocr.predict.params import (
+    Prediction,
+    PredictionPosition,
+    PredictionCharacter,
+)
 
 
 class CTCDecoderType(StrEnum):
-    Default = 'default'
-    TokenPassing = 'token_passing'
-    WordBeamSearch = 'word_beam_search'
+    Default = "default"
+    TokenPassing = "token_passing"
+    WordBeamSearch = "word_beam_search"
 
 
 @pai_dataclass
@@ -27,19 +31,22 @@ class CTCDecoderParams:
     non_word_chars: List[str] = field(default_factory=lambda: list("0123456789[]()_.:;!?{}-'\""))
 
     dictionary: List[str] = field(default_factory=list)
-    word_separator: str = ' '
+    word_separator: str = " "
 
 
 def create_ctc_decoder(codec, params: CTCDecoderParams = None):
     params = params or CTCDecoderParams()
     if params.type == CTCDecoderType.Default:
         from .default_ctc_decoder import DefaultCTCDecoder
+
         return DefaultCTCDecoder(params, codec)
     elif params.type == CTCDecoderType.TokenPassing:
         from .token_passing_ctc_decoder import TokenPassingCTCDecoder
+
         return TokenPassingCTCDecoder(params, codec)
     elif params.type == CTCDecoderType.WordBeamSearch:
         from .ctcwordbeamsearchdecoder import WordBeamSearchCTCDecoder
+
         return WordBeamSearchCTCDecoder(params, codec)
 
     raise NotImplemented
@@ -75,15 +82,7 @@ class CTCDecoder(ABC):
         pred.is_voted_result = False
         pred.logits = probabilities
         for c, l in zip(sentence, pred.labels):
-            pred.positions.append(
-                PredictionPosition(
-                    chars=[
-                        PredictionCharacter(
-                            label=l, char=c, probability=1.0
-                        )
-                    ]
-                )
-            )
+            pred.positions.append(PredictionPosition(chars=[PredictionCharacter(label=l, char=c, probability=1.0)]))
         return pred
 
     def find_alternatives(self, probabilities, sentence, threshold) -> Prediction:
@@ -118,20 +117,19 @@ class CTCDecoder(ABC):
             p = probabilities[start:end]
             p = np.max(p, axis=0)
 
-            pos = PredictionPosition(
-                local_start=start,
-                local_end=end
-            )
+            pos = PredictionPosition(local_start=start, local_end=end)
             pred.positions.append(pos)
 
             for label in reversed(sorted(range(len(p)), key=lambda v: p[v])):
                 if p[label] < threshold and len(pos.chars) > 0:
                     break
                 else:
-                    pos.chars.append(PredictionCharacter(
-                        label=label,
-                        probability=p[label],
-                    ))
+                    pos.chars.append(
+                        PredictionCharacter(
+                            label=label,
+                            probability=p[label],
+                        )
+                    )
 
             if len(pos.chars) > 0:
                 pred.avg_char_probability += pos.chars[0].probability

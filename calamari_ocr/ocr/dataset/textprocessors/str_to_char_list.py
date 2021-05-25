@@ -13,7 +13,7 @@ class StrToCharListProcessorParams(DataProcessorParams):
     chars: List[str] = field(default_factory=list)
 
     @staticmethod
-    def cls() -> Type['TextProcessor']:
+    def cls() -> Type["TextProcessor"]:
         return StrToCharListProcessor
 
 
@@ -26,7 +26,7 @@ class StrToCharListProcessor(TextProcessor[StrToCharListProcessorParams]):
             for char in self.params.chars:
                 if len(char) == 0:
                     continue  # blank
-                if txt[index:index + len(char)] == char:
+                if txt[index : index + len(char)] == char:
                     out.append(char)
                     index += len(char)
                     found = True

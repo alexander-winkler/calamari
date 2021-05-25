@@ -2,8 +2,8 @@ from tfaip.util.enum import StrEnum
 
 
 class DataAugmentationAmountReference(StrEnum):
-    ABSOLUTE = 'absolute'
-    PERCENTAGE = 'relative'
+    ABSOLUTE = "absolute"
+    PERCENTAGE = "relative"
 
 
 # ABS: amount is the factor how often the dataset is augmented, e.g. 100 samples, amount == 2 => 200 augmented samples
@@ -15,16 +15,16 @@ class DataAugmentationAmount:
     @staticmethod
     def from_dict(d: dict):
         return DataAugmentationAmount(
-            reference=d['reference'],
-            amount=d['amount'],
-            percentage=d['percentage'],
+            reference=d["reference"],
+            amount=d["amount"],
+            percentage=d["percentage"],
         )
 
     def to_dict(self):
         return {
-            'reference': self.reference,
-            'amount': self.amount,
-            'percentage': self.percentage,
+            "reference": self.reference,
+            "amount": self.amount,
+            "percentage": self.percentage,
         }
 
     @staticmethod
@@ -38,11 +38,12 @@ class DataAugmentationAmount:
         else:
             raise ValueError("Factor must be between (0, +infinity) but got {}".format(n))
 
-    def __init__(self,
-                 reference=DataAugmentationAmountReference.ABSOLUTE,
-                 amount=0,
-                 percentage=0,
-                 ):
+    def __init__(
+        self,
+        reference=DataAugmentationAmountReference.ABSOLUTE,
+        amount=0,
+        percentage=0,
+    ):
         self.reference = reference
         self.amount = amount
         self.percentage = percentage

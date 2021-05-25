@@ -3,6 +3,7 @@ from typing import Type
 
 from tfaip.data.pipeline.datapipeline import RawDataPipeline
 from tfaip.data.pipeline.definitions import PipelineMode
+from tfaip.trainer.callbacks.logger_callback import LoggerCallback
 from tfaip.trainer.callbacks.tensor_board_callback import TensorBoardCallback
 from tfaip.trainer.callbacks.train_params_logger import TrainerCheckpointsCallback
 from tfaip.trainer.trainer import Trainer as AIPTrainer
@@ -10,7 +11,9 @@ from tfaip.trainer.warmstart.warmstarter import WarmStarter
 
 from calamari_ocr.ocr import Codec, SavedCalamariModel
 from calamari_ocr.ocr.dataset.data import Data
-from calamari_ocr.ocr.dataset.imageprocessors.augmentation import AugmentationProcessorParams
+from calamari_ocr.ocr.dataset.imageprocessors.augmentation import (
+    AugmentationProcessorParams,
+)
 from calamari_ocr.ocr.model.params import ModelParams
 from calamari_ocr.ocr.training.params import TrainerParams
 from calamari_ocr.ocr.training.pipeline_params import CalamariTrainOnlyPipelineParams
@@ -49,20 +52,24 @@ class Trainer(AIPTrainer):
         self._params: TrainerParams = params
         if not isinstance(self._params.checkpoint_save_freq, str) and self._params.checkpoint_save_freq < 0:
             self._params.checkpoint_save_freq = self._params.early_stopping_params.frequency
-        self._params.warmstart.model = checkpoint_path(
-            self._params.warmstart.model) if self._params.warmstart.model else None
+        self._params.warmstart.model = (
+            checkpoint_path(self._params.warmstart.model) if self._params.warmstart.model else None
+        )
         self.checkpoint = None
         if self._params.warmstart.model:
             # Manually handle loading
-            self.checkpoint = SavedCalamariModel(self._params.warmstart.model,
-                                                 auto_update=self._params.auto_upgrade_checkpoints)
-            self._params.warmstart.model = self.checkpoint.ckpt_path + '.h5'
+            self.checkpoint = SavedCalamariModel(
+                self._params.warmstart.model,
+                auto_update=self._params.auto_upgrade_checkpoints,
+            )
+            self._params.warmstart.model = self.checkpoint.ckpt_path + ".h5"
             self._params.warmstart.trim_graph_name = False
 
         self._codec_changes = None
 
     def train(self, callbacks=None, **kwargs):
         callbacks = callbacks if callbacks else []
+        self.setup_data()
 
         # load preloaded dataset
         data: Data = self._data
@@ -79,13 +86,17 @@ class Trainer(AIPTrainer):
         val_pipeline = None
         if self.params.gen.val_gen():
             if model.ensemble > 0:
-                logger.warning("A validation dataset can not be used when training and ensemble. "
-                               "Only a training set is required. Ignoring validation data!")
+                logger.warning(
+                    "A validation dataset can not be used when training and ensemble. "
+                    "Only a training set is required. Ignoring validation data!"
+                )
             else:
                 val_pipeline = self.params.gen.val_data(data)
                 if len(val_pipeline.create_data_generator()) == 0:
-                    raise ValueError("Validation dataset is empty. Provide valid validation data for early stopping. "
-                                     "Alternative select train only data generator mode.")
+                    raise ValueError(
+                        "Validation dataset is empty. Provide valid validation data for early stopping. "
+                        "Alternative select train only data generator mode."
+                    )
 
         if self.params.gen.train_data(data).generator_params.preload:
             # preload before codec was created (not all processors can be applied, yet)
@@ -98,9 +109,11 @@ class Trainer(AIPTrainer):
         codec = data.params.codec
         if not codec:
             if self._params.codec.auto_compute or len(self._params.codec.resolved_include_chars) == 0:
-                codec = Codec.from_input_dataset(filter(lambda x: x, [train_pipeline, val_pipeline]),
-                                                 codec_construction_params=self._params.codec,
-                                                 progress_bar=self._params.progress_bar)
+                codec = Codec.from_input_dataset(
+                    filter(lambda x: x, [train_pipeline, val_pipeline]),
+                    codec_construction_params=self._params.codec,
+                    progress_bar=self._params.progress_bar,
+                )
             else:
                 codec = Codec(list(self._params.codec.resolved_include_chars))
 
@@ -110,15 +123,17 @@ class Trainer(AIPTrainer):
         if self.checkpoint:
             # if we load the weights, take care of codec changes as-well
             restore_checkpoint_params = self.checkpoint.dict
-            restore_data_params = restore_checkpoint_params['scenario']['data']
+            restore_data_params = restore_checkpoint_params["scenario"]["data"]
 
             # checks
-            if data.params.line_height != restore_data_params['line_height']:
-                raise ValueError(f"The model to restore has a line height of {restore_data_params.line_height}"
-                                 f" but a line height of {data.params.line_height} is requested")
+            if data.params.line_height != restore_data_params["line_height"]:
+                raise ValueError(
+                    f"The model to restore has a line height of {restore_data_params.line_height}"
+                    f" but a line height of {data.params.line_height} is requested"
+                )
 
             # create codec of the same type
-            restore_codec = codec.__class__(restore_data_params['codec']['charset'])
+            restore_codec = codec.__class__(restore_data_params["codec"]["charset"])
 
             # the codec changes as tuple (deletions/insertions), and the new codec is the changed old one
             codec_changes = restore_codec.align(codec, shrink=not self._params.codec.keep_loaded)
@@ -141,10 +156,10 @@ class Trainer(AIPTrainer):
 
         if use_training_as_validation:
             logger.info("Using training data for validation.")
-            assert (val_pipeline is None)
+            assert val_pipeline is None
             if self._params.gen.train.preload:
                 data._pipelines[PipelineMode.EVALUATION] = RawDataPipeline(
-                    [s for s in train_pipeline.samples if not s.meta['augmented']],
+                    [s for s in train_pipeline.samples if not s.meta["augmented"]],
                     pipeline_params=self._params.gen.setup.train,
                     data_base=data,
                     generator_params=train_pipeline.generator_params,
@@ -155,21 +170,26 @@ class Trainer(AIPTrainer):
                 data._pipelines[PipelineMode.EVALUATION] = train_pipeline.to_mode(PipelineMode.EVALUATION)
         else:
             if val_pipeline is None:
-                raise ValueError("No validation data provided."
-                                 "Set 'trainer.gen TrainOnly' to pass only training data."
-                                 "Validation will be performed on the training data in this case."
-                                 "Alternatively, set 'trainer.gen SplitTrain' and to use by "
-                                 "default 20% of the training data for validation")
+                raise ValueError(
+                    "No validation data provided."
+                    "Set 'trainer.gen TrainOnly' to pass only training data."
+                    "Validation will be performed on the training data in this case."
+                    "Alternatively, set 'trainer.gen SplitTrain' and to use by "
+                    "default 20% of the training data for validation"
+                )
 
-
+        last_logs = None
         if self._params.current_stage == 0:
-            super(Trainer, self).train(
+            last_logs = super(Trainer, self).train(
                 callbacks=callbacks,
             )
 
         data_aug = self._data.params.pre_proc.processors_of_type(AugmentationProcessorParams)
-        if self._params.data_aug_retrain_on_original and len(data_aug) > 0 and any(
-                p.n_augmentations != 0 for p in data_aug):
+        if (
+            self._params.data_aug_retrain_on_original
+            and len(data_aug) > 0
+            and any(p.n_augmentations != 0 for p in data_aug)
+        ):
             logger.info("Starting training on original data only")
             if self._params.current_stage == 0:
                 self._params.current_epoch = 0
@@ -181,7 +201,7 @@ class Trainer(AIPTrainer):
             self._data.params.pre_proc.erase_all(AugmentationProcessorParams)
             # Remove augmented samples if 'preloaded"
             if isinstance(train_pipeline, RawDataPipeline):
-                train_pipeline.samples = [s for s in train_pipeline.samples if not s.meta.get('augmented', False)]
+                train_pipeline.samples = [s for s in train_pipeline.samples if not s.meta.get("augmented", False)]
 
             logger.info(f"Training on {len(train_pipeline.create_data_generator())} samples.")
 
@@ -195,16 +215,20 @@ class Trainer(AIPTrainer):
 
                 if isinstance(cb, TrainerCheckpointsCallback):
                     if first:
-                        self._callbacks[i] = self.create_train_params_logger_callback(store_params=False,
-                                                                                      store_weights=True)
+                        self._callbacks[i] = self.create_train_params_logger_callback(
+                            store_params=False, store_weights=True
+                        )
                         first = False
                     else:
-                        self._callbacks[i] = self.create_train_params_logger_callback(store_params=True,
-                                                                                      store_weights=False)
-
+                        self._callbacks[i] = self.create_train_params_logger_callback(
+                            store_params=True, store_weights=False
+                        )
+            logger_callback = next(c for c in self._callbacks if isinstance(c, LoggerCallback))
             super(Trainer, self).fit()
+            last_logs = logger_callback.last_logs
 
         logger.info("Training finished")
+        return last_logs
 
     def create_warmstarter(self) -> WarmStarter:
         return WarmStarterWithCodecAdaption(self.params.warmstart, codec_changes=self._codec_changes)

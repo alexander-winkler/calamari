@@ -20,7 +20,7 @@ The suggested method is to install calamari into a virtual environment using pip
 
     virtualenv -p python3 PATH_TO_VENV_DIR # (e.g. virtualenv -p python3 calamari_venv)
     source PATH_TO_VENV_DIR/bin/activate
-    pip install calamari_ocr
+    pip install calamari-ocr
 
 which will install Calamari and all of its dependencies.
 
@@ -43,3 +43,23 @@ Conda users can alternatively call
 .. code-block:: shell
 
     conda env create -f environment_master.yml
+
+Development Setup
+-----------------
+
+Calamari uses `black <https://black.readthedocs.io>`_ code styling.
+It is recommended to integrate running black as pre-commit hook.
+The following guide helps to setup everything.
+
+The requirements ``pre-commit`` and ``black`` are already part of the requirements.
+Setup ``pre-commit`` by calling:
+
+.. code-block:: shell
+
+    pre-commit install
+
+To upgrade the pre-commit packages call
+
+.. code-block:: shell
+
+    pre-commit autoupdate

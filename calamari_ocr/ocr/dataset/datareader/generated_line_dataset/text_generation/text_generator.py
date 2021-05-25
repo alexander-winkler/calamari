@@ -1,12 +1,18 @@
-from calamari_ocr.ocr.dataset.datareader.generated_line_dataset import TextGeneratorParams
-from calamari_ocr.ocr.dataset.datareader.generated_line_dataset.line_generator import Script, Word, FontVariantType
+from calamari_ocr.ocr.dataset.datareader.generated_line_dataset import (
+    TextGeneratorParams,
+)
+from calamari_ocr.ocr.dataset.datareader.generated_line_dataset.line_generator import (
+    Script,
+    Word,
+    FontVariantType,
+)
 import numpy as np
 
 
 class TextGenerator:
     @staticmethod
     def words_to_unformatted_text(words):
-        out = ''
+        out = ""
         for word in words:
             out += word.text
 
@@ -15,18 +21,38 @@ class TextGenerator:
     def __init__(self, text_generator_params: TextGeneratorParams):
         self.params = text_generator_params
         self.charset = list(text_generator_params.charset)
-        self.super_charset = list(text_generator_params.super_charset) if len(text_generator_params.super_charset) > 0 else self.charset
-        self.sub_charset = list(text_generator_params.sub_charset) if len(text_generator_params.sub_charset) > 0 else self.charset
-        assert(len(self.charset) > 0)
-        assert(self.params.sub_script_p + self.params.super_script_p <= 1)
+        self.super_charset = (
+            list(text_generator_params.super_charset) if len(text_generator_params.super_charset) > 0 else self.charset
+        )
+        self.sub_charset = (
+            list(text_generator_params.sub_charset) if len(text_generator_params.sub_charset) > 0 else self.charset
+        )
+        assert len(self.charset) > 0
+        assert self.params.sub_script_p + self.params.super_script_p <= 1
 
     def generate(self):
-        number_of_words = int(np.round(max(1, np.random.normal(self.params.number_of_words_mean, self.params.number_of_words_sigma))))
-
+        number_of_words = int(
+            np.round(
+                max(
+                    1,
+                    np.random.normal(
+                        self.params.number_of_words_mean,
+                        self.params.number_of_words_sigma,
+                    ),
+                )
+            )
+        )
 
         out = []
         for i in range(number_of_words):
-            word_length = int(np.round(max(1, np.random.normal(self.params.word_length_mean, self.params.word_length_sigma))))
+            word_length = int(
+                np.round(
+                    max(
+                        1,
+                        np.random.normal(self.params.word_length_mean, self.params.word_length_sigma),
+                    )
+                )
+            )
             rnd = np.random.rand(10)
 
             if rnd[0] < self.params.sub_script_p:
@@ -52,16 +78,19 @@ class TextGenerator:
 
             if script == Script.NORMAL and len(out) > 0:
                 out.append(
-                    Word(self.params.word_separator, Script.NORMAL, 0, FontVariantType.NORMAL)
+                    Word(
+                        self.params.word_separator,
+                        Script.NORMAL,
+                        0,
+                        FontVariantType.NORMAL,
+                    )
                 )
 
             charset = [self.charset, self.super_charset, self.sub_charset][script]
             s = "".join(np.random.choice(charset, word_length))
             s = s.strip()
 
-            out.append(
-                Word(s, script, letter_spacing, variant)
-            )
+            out.append(Word(s, script, letter_spacing, variant))
 
         return out
 
@@ -89,4 +118,3 @@ if __name__ == "__main__":
     text = gen.generate()
     print(text)
     print(TextGenerator.words_to_unformatted_text(text))
-

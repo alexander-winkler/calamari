@@ -12,10 +12,10 @@ from calamari_ocr.ocr.model.layers.layer import LayerParams, IntVec2D, Layer
 class MaxPool2DLayerParams(LayerParams):
     @classmethod
     def name_prefix(cls) -> str:
-        return 'maxpool2d'
+        return "maxpool2d"
 
     @classmethod
-    def cls(cls) -> Type['Layer']:
+    def cls(cls) -> Type["Layer"]:
         return MaxPool2DLayer
 
     def downscale(self, size: IntVec2D) -> IntVec2D:

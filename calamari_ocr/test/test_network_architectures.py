@@ -89,4 +89,3 @@ class TestNetworkArchitectures(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             trainer_params.output_dir = d
             main(trainer_params)
-

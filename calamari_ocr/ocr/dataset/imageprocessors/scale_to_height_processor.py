@@ -15,20 +15,20 @@ class ScaleToHeightProcessorParams(DataProcessorParams):
     height: int = field(default=-1)
 
     @staticmethod
-    def cls() -> Type['ImageProcessor']:
+    def cls() -> Type["ImageProcessor"]:
         return ScaleToHeightProcessor
 
 
 class ScaleToHeightProcessor(ImageProcessor[ScaleToHeightProcessorParams]):
     def _apply_single(self, data, meta):
-        assert (self.params.height > 0)  # Not initialized
+        assert self.params.height > 0  # Not initialized
         scaled = scale_to_h(data, self.params.height)
         scale = scaled.shape[1] / data.shape[1]
-        meta['scale_to_height'] = (scale,)
+        meta["scale_to_height"] = (scale,)
         return scaled
 
     def local_to_global_pos(self, x, params):
-        scale, = params['scale_to_height']
+        (scale,) = params["scale_to_height"]
         return x / scale
 
 

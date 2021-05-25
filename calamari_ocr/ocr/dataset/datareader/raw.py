@@ -8,7 +8,7 @@ from calamari_ocr.ocr.dataset.datareader.base import CalamariDataGenerator
 
 class RawDataReader(CalamariDataGenerator):
     def __init__(self, mode: PipelineMode, images=None, texts=None, meta=None):
-        """ Create a dataset from memory
+        """Create a dataset from memory
 
         Since this dataset already contains all data in the memory, this dataset may not be loaded
 
@@ -45,21 +45,23 @@ class RawDataReader(CalamariDataGenerator):
             meta = [SampleMeta(str(i), None) for i in range(len(images))]
 
         for image, text, meta in zip(images, texts, meta):
-            self.add_sample({
-                "image": image,
-                "text": text,
-                "id": meta.id,
-                "meta": meta,
-            })
+            self.add_sample(
+                {
+                    "image": image,
+                    "text": text,
+                    "id": meta.id,
+                    "meta": meta,
+                }
+            )
 
         self.loaded = True
 
     def populate_folds(self, n_folds):
         super(RawDataReader, self).populate_folds(n_folds)
         for s in self.samples():
-            s['meta'].fold_id = s['fold_id']
+            s["meta"].fold_id = s["fold_id"]
 
     def _load_sample(self, sample, text_only) -> Generator[InputSample, None, None]:
         if text_only:
-            yield InputSample(None, sample['text'], sample['meta'])
-        yield InputSample(sample['image'], sample['text'], sample['meta'])
+            yield InputSample(None, sample["text"], sample["meta"])
+        yield InputSample(sample["image"], sample["text"], sample["meta"])

@@ -7,11 +7,12 @@ this_dir = os.path.dirname(os.path.realpath(__file__))
 class TestDatasetViewer(unittest.TestCase):
     def run_dataset_viewer(self, add_args):
         from calamari_ocr.scripts.dataset_viewer import main
-        main(add_args + ['--no_plot'])
-        main(add_args + ['--no_plot', '--as_validation'])
-        main(add_args + ['--no_plot', 'preload'])
-        main(add_args + ['--no_plot', '--select', '0', '2'])
-        main(add_args + ['--no_plot', '--n_augmentations', '5'])
+
+        main(add_args + ["--no_plot"])
+        main(add_args + ["--no_plot", "--as_validation"])
+        main(add_args + ["--no_plot", "preload"])
+        main(add_args + ["--no_plot", "--select", "0", "2"])
+        main(add_args + ["--no_plot", "--n_augmentations", "5"])
 
     def test_dataset_viewer_files(self):
         images = os.path.join(this_dir, "data", "uw3_50lines", "train", "*.png")
@@ -33,6 +34,7 @@ class TestDatasetViewer(unittest.TestCase):
 class TestDatasetStatistics(unittest.TestCase):
     def run_dataset_statistics(self, add_args):
         from calamari_ocr.scripts.dataset_statistics import main
+
         main(add_args)
 
     def test_dataset_viewer_files(self):
